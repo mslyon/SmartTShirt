@@ -1,0 +1,7 @@
+tornado==4.5.3
+rpi_ws281x==3.1.0
+Adafruit-TCS34725==1.0.1
+Adafruit-MCP9808==1.5.3
+zeroconf==0.20.0
+requests==2.*
+Adafruit-MPR121==1.1.2

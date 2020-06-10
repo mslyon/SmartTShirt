@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Laufschrift{% endblock %}
+
+{% block navbar-left %}
+  {% include "_navbar.html" with active_link="laufschrift" %}
+{% endblock %}
+
+<!-- Benefits of the Django application -->
+{% block container %}
+{% if user.is_authenticated %}
+<div id="sec1" class="text-page">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h1>Laufschrift</h1>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sec3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 ">
+        <input type="text" class="form-control input-lg" id="custom-text" placeholder="Custom text">
+        <br>
+        <button type="button" class="btn btn-lg btn-primary senddatabtn" style="width: 200px;">SENDEN</button>
+        <div style="padding-bottom:1em; padding-top:1em;"></div>
+        <h3 class="color-h3" >Helligkeit</h3>
+        <div class="slidecontainer">
+          <input type="range" min="1" max="100" value="50" class="slider" id="helligkeit">
+          <p>Prozent: <span id="helligkeit-data"></span></p>
+        </div>
+      </div>
+    </div>
+    <div style="padding-bottom:1em; padding-top:1em;"></div>
+    <div class="row">
+      <div class="col-md-12 ">
+        <h3 class="color-h3">Farbe</h3><div class="color-box colorbox-one senddatabtn"></div>
+        <div class="slidecontainer color-range">
+          <h4 class="color-title rot-title">Rot</h4><input type="range" min="1" max="100" value="50" class="slider" id="rot">
+          <p>Prozent: <span id="rot-data"></span></p>
+          <h4 class="color-title grun-title">Grün</h4><input type="range" min="1" max="100" value="50" class="slider" id="grun">
+          <p>Prozent: <span id="grun-data"></span></p>
+          <h4 class="color-title blau-title">Blau</h4><input type="range" min="1" max="100" value="50" class="slider" id="brau">
+          <p>Prozent: <span id="brau-data"></span></p>
+        </div> 
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 ">
+        <!-- <img src="{% static 'site/img/009-happy.png' %}" alt="" class="emoticon-icons emo-happy">
+        <img src="{% static 'site/img/006-wink.png' %}" alt="" class="emoticon-icons emo-wink">
+        <img src="{% static 'site/img/007-confused.png' %}" alt="" class="emoticon-icons emo-confused">
+        <img src="{% static 'site/img/008-sad.png' %}" alt="" class="emoticon-icons emo-sad"> -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock container %}
+
+{% block scripts %}
+<script>
+
+  var text = "Custom Text";
+  var brightness = 0;
+  var red = 0;
+  var green = 0;
+  var blue = 0;
+
+  var slider = document.getElementById("helligkeit");
+  var output = document.getElementById("helligkeit-data");
+  
+  output.innerHTML = slider.value; // Display the default slider value
+  $( "#helligkeit-data" ).change(function() {
+    brightness = slider.value;
+    console.log(brightness);
+  });
+
+  // Update the current slider value (each time you drag the slider handle)
+  slider.oninput = function() {
+      output.innerHTML = this.value;
+  }
+
+  var slider_rot = document.getElementById("rot");
+  var output_rot = document.getElementById("rot-data");
+  output_rot.innerHTML = slider_rot.value; // Display the default slider value
+
+  // Update the current slider value (each time you drag the slider handle)
+  slider_rot.oninput = function() {
+      output_rot.innerHTML = this.value;
+  }
+
+  var slider_grun = document.getElementById("grun");
+  var output_grun = document.getElementById("grun-data");
+  output_grun.innerHTML = slider_grun.value; // Display the default slider value
+
+  // Update the current slider value (each time you drag the slider handle)
+  slider_grun.oninput = function() {
+      output_grun.innerHTML = this.value;
+  }
+
+  var slider_brau = document.getElementById("brau");
+  var output_brau = document.getElementById("brau-data");
+  output_brau.innerHTML = slider_brau.value; // Display the default slider value
+
+  // Update the current slider value (each time you drag the slider handle)
+  slider_brau.oninput = function() {
+      output_brau.innerHTML = this.value;
+  }
+
+  $(document).ready(function() {
+    $('#custom-text').val('Custom Text');
+    brightness = slider.value;
+    red = slider_rot.value;
+    green = slider_grun.value;
+    blue = slider_brau.value;
+    $(".colorbox-one").css('background', 'rgb('+ red +'%,'+ green +'%,'+ blue +'%)')
+    console.log(brightness, red, blue, green, text);
+  });
+
+  $(document).on('change', 'input', function() {
+    text = $('#custom-text').val();
+    brightness = slider.value;
+    red = slider_rot.value;
+    green = slider_grun.value;
+    blue = slider_brau.value;
+    $(".colorbox-one").css('background', 'rgb('+ red +'%,'+ green +'%,'+ blue +'%)')
+    console.log(brightness, red, blue, green, text);
+  });
+
+  $('.senddatabtn').click(function(){
+    const msg = {
+      name: 'text',
+      value: {
+        text: text,
+        brightness: brightness,
+        red: red,
+        green: green,
+        blue: blue
+      }
+    }
+
+    console.log((JSON.stringify(msg)));
+    websocket.send(JSON.stringify(msg))
+
+  });
+
+</script>
+{% endblock scripts %}
+
+

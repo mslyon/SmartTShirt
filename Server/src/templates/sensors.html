@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Sensors{% endblock %}
+
+{% block navbar-left %}
+  {% include "_navbar.html" with active_link="sensors" %}
+{% endblock %}
+
+<!-- Benefits of the Django application -->
+{% block container %}
+{% if user.is_authenticated %}
+<div id="sec1" class="text-page">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h1>Sensor Daten</h1>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="sec2" class="data-content">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6  sensor-container">
+        <h3>Temperatur</h3>
+        <img src="{% static 'site/img/030-global-warming.png' %}" alt="termo"><span class="sensor-data" id="tempid">0.000</span><span class="sensor-data">°C</span>
+      </div>
+      <div class="col-md-6  sensor-container">
+        <h3>Farbsensor</h3>
+        <img src="{% static 'site/img/025-pantone-3.png' %}" alt="termo"><span class="sensor-data"><div class="farbsensor" id="farbsensor"></div></span>
+      </div>
+    </div>
+    <br><br>
+    <div class="row">
+      <div class="col-md-6 sensor-container">
+        <h3>Lux</h3>
+        <img src="{% static 'site/img/016-creativity.png' %}" alt="termo"><span class="sensor-data" id="luxid">0.000</span>
+      </div>
+      <div class="col-md-6 sensor-container">
+        <h3>Color Temperature</h3>
+        <img src="{% static 'site/img/031-thermometer-3.png' %}" alt="heart"><span class="sensor-data" id="colortempid">0.000</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 sensor-container">
+        <h3>Color Sensor light</h3>
+        <button type="button" class="btn btn-lg btn-primary sensoron" style="width: 100px;">On</button>
+        <button type="button" class="btn btn-lg btn-primary sensoroff" style="width: 100px;">Off</button>
+      </div>
+      <div class="col-md-6 sensor-container">
+        <h3 class="record-title">Record Graph Data <span class="recording"></span></h3>
+        <button type="button" class="btn btn-lg btn-primary charton" style="width: 100px;">On</button>
+        <button type="button" class="btn btn-lg btn-primary chartoff" style="width: 100px;">Off</button>
+        <a href="{% url 'graph' %}"><button type="button" class="btn btn-lg btn-primary openchart" style="width: 100px;">Open Graph</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock container %}
+
+
+{% block scripts %}
+
+
+<script>
+
+   $(document).ready(function() {
+    
+    // var wsUri = "ws://{{ device_ip }}/ws";
+    $('.chartoff').prop('disabled', true);
+
+    var output;
+    var lux;
+    var temp = 0;
+    var color_temp;
+    var red;
+    var green;
+    var blue;
+    var graphTemp  = [];
+    var graphLux   = [];
+    var graphColor = [];
+    var timestamp  = [];
+    var record = false;
+    var defaultTime = 0;
+  
+    function init()
+    {
+      output = document.getElementById("output");
+      testWebSocket();
+    }
+
+    var RecFunc = function () {
+      if (record) return ;
+        
+        var testTemp = temp;
+        var testLux = lux;
+        var testColor = color_temp;
+        
+        defaultTime = defaultTime + 1
+        timestamp.push(defaultTime);
+        graphTemp.push(testTemp);
+        graphLux.push(testLux);
+        graphColor.push(testColor);
+        console.log(graphTemp);
+        console.log(graphLux);
+        console.log(graphColor);
+        console.log(timestamp);
+        
+        setTimeout(RecFunc, 1500);
+        
+    };
+  
+    function testWebSocket() {
+      websocket.onmessage = function(evt) { onMessage(evt) };
+      websocket.onerror = function(evt) { onError(evt) };
+    }
+  
+    function onOpen() {
+      writeToScreen("CONNECTED");
+    }
+  
+    function onClose(evt) {
+    }
+  
+    function onMessage(evt) {
+      data = JSON.parse(evt.data);
+      if (data.name === 'temp') {
+        if (data.value == null){
+          temp = 0;
+        } else {
+          temp = data.value
+        }
+        
+      }
+      if (data.name === 'color') {
+          lux = data.value.lux
+          green = data.value.g
+          red = data.value.r
+          blue = data.value.b
+          if(data.value.temp == null) {
+            color_temp = 0;
+          } else {
+            color_temp = data.value.temp;
+          }
+          
+        }
+      writeToScreen('<span style="color: blue;">RESPONSE: ' + temp +'</span>');
+    }
+  
+    function onError(evt) {
+      writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+    }
+  
+    function doSend(message) {
+      writeToScreen("SENT: " + message);
+      websocket.send(message);
+    }
+  
+    function writeToScreen(message) {
+      var pre = document.createElement("p");
+      // console.log(lux);
+      pre.style.wordWrap = "break-word";
+      pre.innerHTML = message;
+      $("#luxid").text(lux.toFixed(3));
+      $("#tempid").text(temp.toFixed(3));
+      $("#colortempid").text(color_temp.toFixed(3));
+      $("#farbsensor").css('background', 'rgb('+ red +','+ green +','+ blue +')')
+      x="";
+      try {
+        // console.log(x);
+      }
+      catch(err) {
+          
+      }
+      
+    }
+
+  $('.sensoron').click(function(){
+    const msg = {
+      name: 'color_sensor',
+      value: 1
+    }
+    websocket.send(JSON.stringify(msg))
+    console.log(msg);
+  });
+
+  $('.sensoroff').click(function(){
+    const msg = {
+      name: 'color_sensor',
+      value: 0
+    }
+    websocket.send(JSON.stringify(msg))
+    console.log(msg);
+  });
+
+  $('.charton').click(function(){
+    record = false;
+    localStorage.removeItem("temp");
+    localStorage.removeItem("lux");
+    localStorage.removeItem("color");
+    localStorage.removeItem("time");
+    graphTemp  = [];
+    graphLux   = [];
+    graphColor = [];
+    timestamp  = [];
+    defaultTime = 0;
+    $('.charton').prop('disabled', true);
+    $('.chartoff').prop('disabled', false);
+    $('.recording').text('Recording');
+    RecFunc();
+
+  });
+
+  $('.chartoff').click(function(){
+    record = true;
+    localStorage.setItem("temp", JSON.stringify(graphTemp));
+    localStorage.setItem("lux", JSON.stringify(graphLux));
+    localStorage.setItem("color", JSON.stringify(graphColor));
+    localStorage.setItem("time", JSON.stringify(timestamp));
+    $('.charton').prop('disabled', false);
+    $('.chartoff').prop('disabled', true);
+    $('.recording').text('');
+  });
+    
+
+  
+    window.addEventListener("load", init, false);
+      
+  })
+
+
+</script>
+
+{% endblock scripts %}

@@ -1,0 +1,11 @@
+{% if user.is_authenticated %}
+<li {% if active_link == "home" %}class="active"{% endif %}><a href="{% url 'home' %}">Home</a></li>
+<li {% if active_link == "sensors" %}class="active"{% endif %}><a href="{% url 'sensors' %}">Sensors</a></li>
+<li {% if active_link == "laufschrift" %}class="active"{% endif %}><a href={% url 'laufschrift' %}>Laufschrift</a></li>
+<li {% if active_link == "blockly" %}class="active"{% endif %}><a href="{% url 'blockly' %}">Blockly</a></li>
+<li {% if active_link == "turtle" %}class="active"{% endif %}><a href="{% url 'turtle' %}">Turtle</a></li>
+{% if user.is_superuser %}
+<li {% if active_link == "assign" %}class="active"{% endif %}><a href="{% url 'assign' %}">Assign devices</a></li>
+{% endif %}
+{% else %}
+{% endif %}

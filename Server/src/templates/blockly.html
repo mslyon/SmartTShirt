@@ -1,0 +1,1100 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Blockly{% endblock %}
+
+{% block navbar-left %}
+  {% include "_navbar.html" with active_link="blockly" %}
+{% endblock %}
+
+<!-- Benefits of the Django application -->
+{% block container %}
+
+<!-- {% if user.is_authenticated %} -->
+
+<div id="blocklyArea"></div>
+<div id="blocklyDiv" style="position: absolute; width: 100%;"></div>
+<div id="pythoncode"> <textarea id="code" name="code"></textarea></div>
+
+<div class="container">
+  <div class="row blocklybuttons">
+      <form class="codetoclass">
+          <!-- <input id="inputcode"></input>
+          <input type="submit"></input> -->
+      </form>
+      <div id="output"></div>
+    <!-- <div class="change"></div> -->
+    <div id="studentclassroom" style="display:none;" >{{ user.profile.classgroup }}</div>
+    <div class="updateid" hidden></div> 
+    <div class="updatename" hidden></div>
+    <div class="updatedesc" hidden></div>
+    <div class="updatecode" hidden></div>
+    <button type="button" class="btn btn-secondary update-block">Update Code</button>
+    &nbsp;
+    <button type="button" class="btn btn-primary btn-info load-block">Load Code</button>
+    <button type="button" class="btn btn-primary btn-danger saveblocks" data-toggle="modal" data-target="#saveModal">Save Code</button>
+    <button type="button" class="btn btn-primary sendcodebtn">Send Code</button>
+    <button type="button" class="btn btn-default disabled waitcodebtn">Code being deployed</button>
+    {% if user.is_superuser %}
+    <button type="button" class="btn btn-primary btn-warning" data-toggle="modal" data-target="#sendClass">Send to Class</button>
+    {% endif %}
+    <button type="button" class="btn btn-primary btn-info show-py">Show Code</button>
+    <button type="button" class="btn btn-primary btn-info hide-py">Hide Code</button>
+    &nbsp;
+    {% if user.is_superuser %}
+    <button type="button" class="btn btn-primary btn-danger classsend">SEND to Students</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SAVE BLOCKS Modal -->
+<div id="saveModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Save blockly</h4>
+      </div>
+      <div class="modal-body">
+          <div class="form-group">
+              <div id="studentclass" style="display:none;" >{{ user.profile.classgroup }}</div>
+              <label for="bname">Block Name:</label>
+              <input type="text" class="form-control" id="bname" maxlength="45">
+              <label for="bdesc">Block Description:</label>
+              <textarea class="form-control" rows="3" id="bdesc" maxlength="190"></textarea>
+              <label for="bcode">Block code:</label>
+              <textarea class="form-control" rows="3" id="bcode"></textarea>
+          </div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-primary saveblock" data-dismiss="modal">Save</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SEND TO CLASS Modal -->
+<div id="sendClass" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Send to Class</h4>
+        <p>select devices</p>
+      </div>
+      <div class="modal-body">
+        <table class="table device-table">
+          <thead>
+            <tr>
+                <th scope="col">Device IP</th>
+                <th scope="col">Assigned to</th>
+                <th scope="col"></th>
+            </tr>
+          </thead>    
+          <tbody>
+            {% for profile in profiles %}
+              <tr>
+                <td class="device-ip">{{ profile.assigned_device.last_ip }}</td>
+                <td>{{ profile.user.name }}</td>
+                <td><input type="checkbox" name="devicecheck" data-val="{{ profile.assigned_device.last_ip }}"></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+      </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary sendclasscode" data-dismiss="modal">Send</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Blockly XML toolbar markup -->
+<xml id="toolbox" style="display: none">
+  <category name="Smartshirt" colour ="120">
+    <category name="Matrix" colour ="230">
+      <block type="matrix_init"></block>
+      <block type="matrix_clear"></block>
+      <block type="matrix_setBrightness">
+        <value name="brightness">
+          <shadow type="math_number">
+            <field name="NUM">50</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="set_XY_5x5_monoColor"></block>
+      <block type="set_XY_5x5_multiColor"></block>
+      <block type="set_XY_8x8_monoColor"></block>
+      <block type="set_XY_8x8_multiColor"></block>
+      <block type="set_XY_5x5_onePixel">
+        <value name="xPos">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="yPos">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="color">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#00ff00</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="set_XY_8x8_onePixel">
+        <value name="xPos">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="yPos">
+          <shadow type="math_number">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <value name="color">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#00ff00</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="matrix_scrollText">
+        <value name="textStr">
+          <shadow type="text">
+            <field name="TEXT">Smartfeld</field>
+          </shadow>
+        </value>
+        <value name="color">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#00ff00</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+    <category name="Strip" colour ="165">
+      <block type="strip_init">
+        <value name="ledCount">
+          <shadow type="math_number">
+            <field name="NUM">5</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="strip_setBrightness">
+        <value name="brightness">
+          <shadow type="math_number">
+            <field name="NUM">50</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="strip_setPixel">
+        <value name="pixelPos">
+          <shadow type="math_number">
+            <field name="NUM">2</field>
+          </shadow>
+        </value>
+        <value name="color">
+          <shadow type="colour_picker">
+            <field name="COLOUR">#00ff00</field>
+          </shadow>
+        </value>
+      </block>
+      <block type="strip_clear"></block>
+      
+    </category>
+    <category name="Rainbow" colour ="50">
+      <block type="init_strip"></block>
+      <block type="rainbow"></block>
+      <!-- <block type="color_wipe"></block> -->
+      <block type="theaterChaseRainbow"></block>
+    </category>
+      <category name="Sensor" colour ="30">
+        <category name="MPR121" colour ="30">
+        <block type="MPR121_init"></block>
+        <block type="MPR121_getCapState"></block>
+      </category> 
+      <category name="MCP9808" colour ="30">
+        <block type="MCP9808_init"></block>
+        <block type="MCP9808_getTemp"></block>
+      </category> 
+      <category name="ColorSensor" colour ="30">
+        <block type="TCS34725_init"></block>
+        <block type="TCS34725_getColor"></block>
+        <block type="TCS34725_disableLight"></block>
+      </category> 
+    </category>
+    <category name="GPIO" colour ="0">
+      <block type="GPIO_init"></block>
+      <block type="GPIO_setMode"></block>
+      <block type="GPIO_setIO"></block>
+    </category>
+    <category name="Time" colour ="270">
+      <block type="wait_sec">
+        <value name="time_sec">
+          <shadow type="math_number">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+      </block>
+    </category>
+  </category>
+  <sep></sep>
+  <category name="Logic" colour="210">
+    <block type="controls_if"></block>
+    <block type="logic_compare"></block>
+    <block type="logic_operation"></block>
+    <block type="logic_negate"></block>
+    <block type="logic_boolean"></block>
+    <block type="logic_null"></block>
+    <block type="logic_ternary"></block>
+  </category>
+  <category name="Loops" colour="120">
+    <block type="controls_repeat_ext">
+      <value name="TIMES">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="controls_whileUntil"></block>
+    <block type="controls_for">
+      <value name="FROM">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="TO">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+      <value name="BY">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="controls_forEach"></block>
+    <block type="controls_flow_statements"></block>
+  </category>
+  <category name="Math" colour="230">
+    <block type="math_number"></block>
+    <block type="math_arithmetic">
+      <value name="A">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="B">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_single">
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">9</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_trig">
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">45</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_constant"></block>
+    <block type="math_number_property">
+      <value name="NUMBER_TO_CHECK">
+        <shadow type="math_number">
+          <field name="NUM">0</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_round">
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">3.1</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_on_list"></block>
+    <block type="math_modulo">
+      <value name="DIVIDEND">
+        <shadow type="math_number">
+          <field name="NUM">64</field>
+        </shadow>
+      </value>
+      <value name="DIVISOR">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_constrain">
+      <value name="VALUE">
+        <shadow type="math_number">
+          <field name="NUM">50</field>
+        </shadow>
+      </value>
+      <value name="LOW">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="HIGH">
+        <shadow type="math_number">
+          <field name="NUM">100</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_random_int">
+      <value name="FROM">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="TO">
+        <shadow type="math_number">
+          <field name="NUM">100</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_random_float"></block>
+  </category>
+  <category name="Text" colour="160">
+    <block type="text"></block>
+    <block type="text_join"></block>
+    <block type="text_append">
+      <value name="TEXT">
+        <shadow type="text"></shadow>
+      </value>
+    </block>
+    <block type="text_length">
+      <value name="VALUE">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_isEmpty">
+      <value name="VALUE">
+        <shadow type="text">
+          <field name="TEXT"></field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_indexOf">
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR">textVariable</field>
+        </block>
+      </value>
+      <value name="FIND">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_charAt">
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR">textVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="text_getSubstring">
+      <value name="STRING">
+        <block type="variables_get">
+          <field name="VAR">textVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="text_changeCase">
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_trim">
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_print">
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_prompt_ext">
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+  </category>
+  <category name="Lists" colour="260">
+    <block type="lists_create_with">
+      <mutation items="0"></mutation>
+    </block>
+    <block type="lists_create_with"></block>
+    <block type="lists_repeat">
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">5</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="lists_length"></block>
+    <block type="lists_isEmpty"></block>
+    <block type="lists_indexOf">
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR">listVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="lists_getIndex">
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR">listVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="lists_setIndex">
+      <value name="LIST">
+        <block type="variables_get">
+          <field name="VAR">listVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="lists_getSublist">
+      <value name="LIST">
+        <block type="variables_get">
+          <field name="VAR">listVariable</field>
+        </block>
+      </value>
+    </block>
+    <block type="lists_split">
+      <value name="DELIM">
+        <shadow type="text">
+          <field name="TEXT">,</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="lists_sort"></block>
+  </category>
+  <category name="Colour" colour="20">
+    <block type="colour_picker"></block>
+    <block type="colour_random"></block>
+    <block type="colour_rgb">
+      <value name="RED">
+        <shadow type="math_number">
+          <field name="NUM">100</field>
+        </shadow>
+      </value>
+      <value name="GREEN">
+        <shadow type="math_number">
+          <field name="NUM">50</field>
+        </shadow>
+      </value>
+      <value name="BLUE">
+        <shadow type="math_number">
+          <field name="NUM">0</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="colour_blend">
+      <value name="COLOUR1">
+        <shadow type="colour_picker">
+          <field name="COLOUR">#ff0000</field>
+        </shadow>
+      </value>
+      <value name="COLOUR2">
+        <shadow type="colour_picker">
+          <field name="COLOUR">#3333ff</field>
+        </shadow>
+      </value>
+      <value name="RATIO">
+        <shadow type="math_number">
+          <field name="NUM">0.5</field>
+        </shadow>
+      </value>
+    </block>
+  </category>
+  <sep></sep>
+  <category name="Variables" colour="330" custom="VARIABLE"></category>
+  <category name="Functions" colour="290" custom="PROCEDURE"></category>
+</xml>
+<!-- {% endif %} -->
+{% endblock container %}
+
+{% block scripts %}
+<!-- <link href="{% static 'site/css/main.css' %}" rel="stylesheet"> -->
+<link rel="stylesheet" href="{% static 'site/css/codemirror.css' %}">
+<script src="{% static 'site/js/blockly_compressed.js' %}"></script>
+<script src="{% static 'site/js/blocks_compressed.js' %}"></script>
+<script src="{% static 'site/js/en.js' %}"></script>
+<script src="{% static 'site/js/python_compressed.js' %}"></script>
+<script src="{% static 'site/js/toolbar.js' %}"></script>
+<!-- <script src="{% static 'site/js/codemirror.js' %}"></script> -->
+<!-- <script src="{% static 'site/js/python.js' %}"></script> -->
+<script src="{% static 'site/js/ejs.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'site/css/datatables.min.css' %}">
+<script src="{% static 'site/js/datatables.min.js' %}"></script>
+
+<script type="text/javascript">
+
+</script>
+
+
+<script>
+  
+var last_blockid = (`<%= block.id %>`);
+var load_dialog = (`<!-- LOAD BLOCKS Modal -->
+<div id="loadModal" class="modal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Load Code</h4>
+        <div class="myusername" style="display:none;">{{ user.get_full_name }}</div>
+        <div class="checkbox" style="display:none">
+          <label><input class="allusers"type="checkbox" value="">Display only for current user</label>
+        </div>
+        <div class="checkbox" style="display:none">
+          <label><input class="myclass"type="checkbox" value="">Display only for current class</label>
+        </div>
+        <button type="button" class="btn btn-primary load-block-all">Display all</button>
+      </div>
+      <div class="modal-body blocksbody">
+          <table id="loadtable" class="table userblocks">
+              <thead>
+                <tr>
+                  <th style="display:none;"></th>
+                  <th>Block Name</th>
+                  <th>Block Description</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Delete</th>
+                  <th style="display:none;">{{ user.get_full_name }}</th>
+                  <th style="">{{ user.profile.classgroup }}</th>
+                </tr>
+              </thead>
+              <tbody id="page2">
+                <% for(let block of blocks) { %>
+                <tr class="<%= block.studentclass %>">
+                  <td class="bid" style="display:none;"><%= block.id %></td>
+                  <td class="bname"><%= block.block_name %></td>
+                  <td class="bdesc"><%= block.block_desc %></td>
+                  <td><%= block.user %></td>
+                  <td><button type="button" class="btn btn-primary loadblocks">Load</button></td>
+                  <td><button type="button" class="btn btn-danger deleteblock">Delete</button></td>
+                  <td class="loadcode"><%= block.block_code %></td>
+                  <td style=""><%= block.studentclass %></td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+      </div>
+      <div class="modal-footer">
+        
+        <div id="message">
+  <div style="padding: 5px;">
+      <div id="inner-message" class="alert alert-danger">
+          <button type="button" class="close" data-dismiss="alert">&times;</button>
+          Please wait, loading code for all users.
+      </div>
+  </div>
+</div>
+        <button type="button" class="btn btn-default removeclick" data-dismiss="modal" >Close</button>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+var load_dialog_all = (`<!-- LOAD BLOCKS Modal -->
+<div id="loadModalall" class="modal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Load Code</h4>
+        <div class="myusername" style="display:none;">{{ user.get_full_name }}</div>
+        <div class="checkbox">
+          <label><input class="allusers"type="checkbox" value="">Display only for current user</label>
+        </div>
+        <div class="checkbox">
+          <label><input class="myclass"type="checkbox" value="">Display only for current class</label>
+        </div>
+      </div>
+      <div class="modal-body blocksbody">
+          <table id="loadtabletwo" class="table userblocks">
+              <thead>
+                <tr>
+                  <th style="display:none;"></th>
+                  <th>Block Name</th>
+                  <th>Block Description</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Delete</th>
+                  <th style="display:none;">{{ user.get_full_name }}</th>
+                  <th style="">{{ user.profile.classgroup }}</th>
+                </tr>
+              </thead>
+              <tbody id="page2">
+                <% for(let block of blocks) { %>
+                <tr class="<%= block.studentclass %>">
+                  <td class="bid" style="display:none;"><%= block.id %></td>
+                  <td class="bname"><%= block.block_name %></td>
+                  <td class="bdesc"><%= block.block_desc %></td>
+                  <td><%= block.user %></td>
+                  <td><button type="button" class="btn btn-primary loadblocks">Load</button></td>
+                  <td><button type="button" class="btn btn-danger deleteblock">Delete</button></td>
+                  <td class="loadcode"><%= block.block_code %></td>
+                  <td style=""><%= block.studentclass %></td>
+                </tr>
+                <% } %>
+              </tbody>
+            </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default removeclick" data-dismiss="modal" >Close</button>
+      </div>
+    </div>
+  </div>
+</div>`);
+
+  var xml_empty
+
+  $( document ).ready(function() {
+      myUpdateFunction();
+      $('.show-py').prop('disabled', true);
+      xml_empty = Blockly.Xml.workspaceToDom(workspacePlayground);
+      // console.log(xml_empty);
+
+  });
+
+  $('.waitcodebtn').hide();
+  // var wsUri = "ws://{{device_ip}}/ws";
+  var blocklyArea = document.getElementById('blocklyArea');
+  var blocklyDiv = document.getElementById('blocklyDiv');
+  // $('.update-block').hide();
+  var code = "";
+  var editor = "";
+  var msg;
+  var fullscreen = 0;
+  var workspacePlayground = Blockly.inject(blocklyDiv,
+      {toolbox: document.getElementById('toolbox')});
+  // var websocket = new WebSocket(wsUri);
+  var done = 0;
+  console.log(wsUri);
+
+  var onresize = function(e) {
+    // Compute the absolute coordinates and dimensions of blocklyArea.
+    var element = blocklyArea;
+    var x = 0;
+    var y = 0;
+    do {
+      x += element.offsetLeft;
+      y += element.offsetTop;
+      element = element.offsetParent;
+    } while (element);
+    blocklyDiv.style.left = x + 'px';
+    blocklyDiv.style.top = y + 'px';
+    if (fullscreen == 0) {
+      blocklyDiv.style.width = '50%';
+    } else if (fullscreen == 1) {
+      blocklyDiv.style.width = '100%';
+    }
+    
+    blocklyDiv.style.height = 'calc(100vh - 150px)' ;
+  };
+
+  window.addEventListener('resize', onresize, false);
+  onresize();
+  Blockly.svgResize(workspacePlayground);
+
+  function myUpdateFunction(event) {
+    code = Blockly.Python.workspaceToCode(workspacePlayground);
+    document.getElementById('code').value = code;
+    console.log(code);    
+
+  }
+  workspacePlayground.addChangeListener(myUpdateFunction);
+
+  $(document).ready(function() {
+    var wsUrii = "ws://{{device_ip}}/ws";
+    var websockett = new WebSocket(wsUri);
+
+    function init() {
+      testWebSocket();
+    }
+    function testWebSocket() {
+      websockett = new WebSocket(wsUrii);
+
+      websocket.onopen = function() { 
+        console.log('connected');
+        $('div.connectionstatus').text('connected');
+        $('div.connectionstatus').css('background-color', 'green');
+
+      };
+      websocket.onclose = function(evt) { 
+        // console.log('disconnected');
+        $('div.connectionstatus').text('disconnected');
+        $('div.connectionstatus').css('background-color', 'red');
+        done = 1;
+        $('.sendcodebtn').show();
+        $('.waitcodebtn').hide();
+      };
+      websocket.onmessage = function(evt) { onMessage(evt) };
+      websocket.onerror = function() { console.log(''); };
+
+
+    }
+
+    function onMessage(evt) {
+      data = JSON.parse(evt.data);
+
+      if (data.name === 'subprocess_complete'){
+        console.log(data.name);
+        
+        done = 1;
+        $('.sendcodebtn').show();
+        $('.waitcodebtn').hide();
+      }
+
+    }
+    window.addEventListener("load", init, false);
+  });
+
+  $('.sendcodebtn').click(function(){
+    const msg = {
+      name: 'code',
+      value: code
+    }
+    $('.waitcodebtn').show();
+    $('.sendcodebtn').hide();
+    console.log(code);
+    console.log((JSON.stringify(msg)));
+    websocket.send(JSON.stringify(msg))
+
+  });
+
+  $('.show-py').click(function(){
+    $('#pythoncode').css('display', 'inline-block');
+    $('#blocklyArea').css('width', '50%');
+    blocklyDiv.style.width = '50%';
+    Blockly.svgResize(workspacePlayground);
+    $('.show-py').prop('disabled', true);
+    $('.hide-py').prop('disabled', false);
+    fullscreen = 0;
+  });
+
+  $('.hide-py').click(function(){
+    $('#pythoncode').css('display', 'none');
+    $('#blocklyArea').css('width', '100%');
+    blocklyDiv.style.width = '100%';
+    Blockly.svgResize(workspacePlayground);
+    $('.hide-py').prop('disabled', true);
+    $('.show-py').prop('disabled', false);
+    fullscreen = 1;
+  });
+
+  function removeItem(array, item){
+    for(var i in array){
+        if(array[i]==item){
+            array.splice(i,1);
+            break;
+          }
+      }
+  }
+
+  // Blockly send to Students
+  window.addEventListener("load", function() {
+      // create websocket instance
+      var address = window.location.hostname;
+      var mySocket = new WebSocket("ws://" + address +":8090/ws");
+      // var mySocket = new WebSocket("ws://localhost:8090/ws");
+      console.log(address);
+      // add event listener reacting when message is received
+      mySocket.onmessage = function (event) {
+          var output = document.getElementById("output");
+          // put text into our output div
+          // output.textContent = event.data;
+          coderec = event.data;
+          var xml = Blockly.Xml.textToDom(coderec);
+
+          if( $('.classsend').length ) {
+              
+          } else {
+              if (confirm('The teacher is sending you a Blockly code. Accept?')) {
+                Blockly.mainWorkspace.clear();
+                Blockly.Xml.domToWorkspace(xml, workspacePlayground);
+            } else {
+            }
+          }
+      };
+      var form = document.getElementsByClassName("codetoclass");
+      var input = document.getElementById("inputcode");
+      $('.classsend').click(function(e){
+          var xml = Blockly.Xml.workspaceToDom(workspacePlayground);
+          var xml_text = Blockly.Xml.domToText(xml);
+          input_text = xml_text;
+          mySocket.send(input_text);
+          e.preventDefault()
+      });
+      // form[0].addEventListener("submit", function (e) {
+      //     // on forms submission send input to our server
+          
+      // })
+  });
+
+  // START LOAD/SAVE blocks
+  $('.saveblocks').click(function(){
+    var xml = Blockly.Xml.workspaceToDom(workspacePlayground);
+    var xml_text = Blockly.Xml.domToText(xml);
+    $('#bcode').text(xml_text);
+  });
+
+  $('.saveblock').click(function(evt) {
+      var name = $("#bname").val();
+      var desc = $("#bdesc").val();
+      var code = $("#bcode").val();
+      var studentclass = $("#studentclass").text();
+      // console.log(studentclass);
+      $.post("/save_block/", {"code": code, "name": name, "desc": desc, "studentclass": studentclass});
+      setTimeout(function (){
+        $.ajax({
+             url : "/load_last/",
+             dataType: "json",
+             success : function (data) {
+                      // $('#first_name').text( data[0].first_name);
+                      // console.log(data.blocks[0].block_name);
+                      $('.updateid').html(data.blocks[0].id);
+                      $('.updatename').html(data.blocks[0].block_name);
+                      $('.updatedesc').html(data.blocks[0].block_desc);
+                      $('.updatecode').html(data.blocks[0].block_code);
+                      }
+      });
+
+      }, 500);
+
+  });
+
+  $('.update-block').click(function(evt) {
+      var xml = Blockly.Xml.workspaceToDom(workspacePlayground);
+      var xml_text = Blockly.Xml.domToText(xml);
+      var id =  $('.updateid').text();
+      var name = $('.updatename').text();
+      var desc = $('.updatedesc').text();
+      var code = $('.updatecode').text();
+      var studentclass = $("#studentclass").text();
+      // console.log(studentclass);
+      // console.log(id);
+      if (window.confirm("Are you sure you want to update block name: " + name + "?")) { 
+        // $.get("/delete_block/", {"id":id, "name": name, "desc": desc});
+        $.post("/save_block/", {"id":id, "code": xml_text, "name": name, "desc": desc, "studentclass": studentclass});
+        // $('.update-block').hide();
+
+
+      }
+  });
+
+  $("body").on("click", ".deleteblock", function(evt) {
+      var id = $(this).closest('tr').find('.bid').text();
+      var name = $(this).closest('tr').find('.bname').text();
+      var desc = $(this).closest('tr').find('.bdesc').text();
+      var code = $(this).closest('tr').find('.loadcode').text();
+      // console.log(id);
+      if (window.confirm("Are you sure you want to delete this block?")) { 
+        $.get("/delete_block/", {"id":id, "name": name, "desc": desc});
+        $(this).closest('tr').remove();
+      }
+      
+  });
+
+  $('.load-block').click(function(evt) {
+      $.get("/load_block/", {}, function(data) {
+          var html = ejs.render(load_dialog, data);
+          $(html).modal({backdrop: false});
+      });   
+  });
+
+  $("body").on("click", ".load-block-all", function(evt) {
+    $('#message').show();
+    // console.log('all');
+      $.get("/load_block_all/", {}, function(data) {
+          var html = ejs.render(load_dialog_all, data);
+          $(html).modal({backdrop: false});
+      });   
+  });
+
+  $("body").on("click", ".loadblocks", function(evt) {
+      var bcodeid = $(this).closest('tr').find('.bid').text();
+      var name = $(this).closest('tr').find('.bname').text();
+      var desc = $(this).closest('tr').find('.bdesc').text();
+      var code = $(this).closest('tr').find('.loadcode').text();
+      $('.updateid').text(bcodeid);
+      $('.updatename').text(name);
+      $('.updatedesc').text(desc);
+      $('.updatecode').text(code);
+      
+      // Blockly.mainWorkspace.clear();
+      var bcode = $(evt.target).parent().next().next().text();
+      // console.log(bcode);
+      var xml = Blockly.Xml.textToDom(bcode);
+      Blockly.Xml.domToWorkspace(xml, workspacePlayground);
+      $('.update-block').show();
+  });
+
+// Detect modal visibility
+  $("body").on('shown.bs.modal', "#loadModal", function(evt) {
+    $('.load-block').prop("disabled",true);
+    $('.myclass').click();
+    $('#loadtable').DataTable( {
+        "paging":   false,
+        "info":     false,
+        "destroy": true,
+    } );
+  });
+
+  $("body").on('hidden.bs.modal', "#loadModal", function(evt) {
+    $(".load-block").attr("disabled", false);
+    $('#loadtable').DataTable().destroy(true);
+  });
+
+  $("body").on('shown.bs.modal', "#loadModalall", function(evt) {
+    $("#loadModal").modal("hide");
+    $('.load-block').prop("disabled",true);
+    $('#loadtabletwo').DataTable( {
+        "paging":   false,
+        "info":     false,
+        "destroy": true,
+    });
+  });
+
+  $("body").on('hidden.bs.modal', "#loadModalall", function(evt) {
+    $('.load-block').prop("disabled",false);
+    $('#loadtabletwo').DataTable().destroy(true);
+
+  });
+
+  $("body").on("click", ".allusers", function(evt) {
+    if ($('input.allusers').is(':checked')) {
+      $(".userblocks tr:not(:contains('"+ "{{ user.get_full_name }}" +"'))").hide();
+      $("input.myclass").attr("disabled", true);
+    } else {
+      $(".userblocks tr").show();
+      $("input.myclass").attr("disabled", false);
+    }
+  });
+
+  $("body").on("click", ".myclass", function(evt) {
+    if ($('input.myclass').is(':checked')) {
+      console.log("{{user.profile.classgroup}}");
+      $('.userblocks td:nth-child(8)').filter(function() {return $(this).text() !== '{{user.profile.classgroup}}';}).parents('tr').hide();
+      $("input.allusers").attr("disabled", true);
+    } else {
+      $(".userblocks tr").show();
+      $("input.allusers").attr("disabled", false);
+    }
+  });
+
+  $("body").on("hidden.bs.modal", "#loadModal", function(evt) {
+    $("#loadModal").remove();
+  })
+
+
+  // START SEND CODE To Multiple devices
+  $('.sendclasscode').click(function(){
+    const msg = {
+      name: 'code',
+      value: code
+    }
+
+    checkboxes = $('.device-table').find('input:checked')
+    var addresses = [];
+    $.each(checkboxes, function(idx, elem) {
+        var value = $(elem).data('val');
+        addresses.push(value);
+        mUrl = "ws://" + value + "/ws";
+        var classwebsocket = new WebSocket(mUrl);
+        classwebsocket.onopen = function () {
+            classwebsocket.send(JSON.stringify(msg));
+        }
+    });
+    console.log(addresses);
+    alertdevices = addresses.toString();
+    alert('The current block has been sent to these devices: ' + alertdevices);
+  });
+  // END SEND CODE To Multiple devices
+  
+
+  $('.sendfav01').click(function(){
+    const msg = {
+      name: 'save',
+      id: '01',
+      value: code
+    }
+
+    console.log(code);
+    websocket.send(JSON.stringify(msg));
+    alert('The current block has been set as your Favorite-01 block');
+
+  });
+
+  $('.sendfav02').click(function(){
+    const msg = {
+      name: 'save',
+      id: '02',
+      value: code
+    }
+
+    console.log(code);
+    websocket.send(JSON.stringify(msg));
+    alert('The current block has been set as your Favorite-02 block');
+
+  });
+
+  $('.sendfav03').click(function(){
+    const msg = {
+      name: 'save',
+      id: '03',
+      value: code
+    }
+
+    console.log(code);
+    websocket.send(JSON.stringify(msg));
+    alert('The current block has been set as your Favorite-03 block');
+
+  });
+
+// setup of the custom as well as the default blocks that
+// can be added from the toolbox
+// const Blockly = window.Blockly
+
+// CUSTOM BLOCKS ----------------
+
+
+</script>
+{% endblock scripts %}
+
+

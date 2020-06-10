@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Assign Devices{% endblock %}
+
+{% block navbar-left %}
+    {% include "_navbar.html" %}
+{% endblock %}
+
+{% block container %}
+    <div class="text-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-6">
+                    <table id="assigntable" class="table device-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">User</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for profile in profiles %}
+                                <tr>
+                                    <th scope="row">{{ profile.user.name }}</th>
+                                    <td>
+                                        <form action="/assign_device/{{ uuid }}/{{ profile.user_id }}/" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">Assign</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock container %}
+
+{% block scripts %}
+<!-- <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script> -->
+<link rel="stylesheet" href="{% static 'site/css/datatables.min.css' %}">
+<script src="{% static 'site/js/datatables.min.js' %}"></script>
+<script>
+    $( document ).ready(function() {
+        $('#assigntable').DataTable( {
+            "paging":   false,
+            "info":     false
+        } );
+    });
+</script>
+{% endblock scripts %}

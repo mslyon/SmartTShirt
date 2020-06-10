@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Assign Devices{% endblock %}
+
+{% block navbar-left %}
+    {% include "_navbar.html" with active_link="assign" %}
+{% endblock %}
+
+{% block container %}
+    <div class="text-page">
+        <div class="container">
+            <div class="row">
+                <div class="col-6">
+                    <table id="assigntable" class="table device-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Device UUID</th>
+                                <th scope="col">Device IP</th>
+                                <th scope="col">Last seen</th>
+                                <th scope="col">Assigned to</th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in devices %}
+                                <tr>
+                                    <th scope="row" class="device-uuid">{{ device.uuid }}</th>
+                                    <td class="device-ip">{{ device.last_ip }}</td>
+                                    <td>{{ device.last_registered }}</td>
+                                    <td>
+                                        {% for profile in device.get_assigned_profiles %}
+                                            {% if forloop.last %}
+                                                {{ profile.user.name }}
+                                            {% else %}
+                                                {{ profile.user.name }},
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td><button type="button" class="btn btn-info show-device">Show device</button></td>
+                                    <td>
+                                        <a href="/assign/{{ device.uuid}}" type="button" class="btn btn-primary">Assign device</button>
+                                    </td>
+                                    <td>
+                                        {% if device.has_profile_assigned %}
+                                            <form action="/unassign_device/{{ device.id }}/" method="post">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-secondary">Unassign device</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form action="/delete_device/{{ device.uuid}}/" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning">Delete device</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock container %}
+
+{% block scripts %}
+<!-- <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.css"/>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script> -->
+<link rel="stylesheet" href="{% static 'site/css/datatables.min.css' %}">
+<script src="{% static 'site/js/datatables.min.js' %}"></script>
+<script>
+    $( document ).ready(function() {
+        $('#assigntable').DataTable( {
+            "paging":   false,
+            "info":     false
+        } );
+    });
+    $(".device-table").on("click", ".show-device", function(evt) {
+        var btn = $(evt.target);
+        var uuid = btn.parent().siblings(".device-uuid").text();
+        $.get("/show_device/", {"uuid": uuid}, function(data) {
+            if(data.hasOwnProperty("fail")) {
+                alert(data.fail);
+            }
+        });
+        return false;
+    });
+</script>
+{% endblock scripts %}

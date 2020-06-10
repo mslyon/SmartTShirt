@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ block.super }}Graph{% endblock %}
+
+{% block navbar-left %}
+  {% include "_navbar.html" with active_link="sensors" %}
+{% endblock %}
+
+<!-- Benefits of the Django application -->
+{% block container %}
+{% if user.is_authenticated %}
+<div id="sec1" class="text-page">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h1>Graph Daten</h1>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="sec2" class="data-content">
+  <div class="container">
+        Chart Type:
+        <select id="type">
+            <option value="line">Line</option>
+            <option value="bar">Bar</option>
+        </select>
+        <button id="update">update</button>
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <canvas id="myChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 text-center">
+                <div class="form-group">
+                        <label for="comment">Arrays:</label>
+                        <p><b>Temperature: </b><span class="temp"></span></p>
+                        <p><b>Lux: </b><span class="lux"></span></p>
+                        <p><b>Color temperature:</b><span class="color"></span></p>
+
+                      </div> 
+        </div>
+    </div>
+    
+    
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock container %}
+
+
+{% block scripts %}
+<script src="{% static 'site/js/Chart.bundle.min.js' %}"></script>
+<script>
+  $(document).ready(function() {
+      lsTemp = JSON.parse(localStorage.getItem("temp"));
+      lsLux = JSON.parse(localStorage.getItem("lux"));
+      lsColor = JSON.parse(localStorage.getItem("color"));
+      lsTime = JSON.parse(localStorage.getItem("time"));
+      $('.temp').text(lsTemp);
+      $('.lux').text(lsLux);
+      $('.color').text(lsColor);
+      console.log(lsTime);
+
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: lsTemp,
+                label: 'Temperature',
+                // type: 'line',
+                // This binds the dataset to the left y axis
+                yAxisID: 'left-y-axis', 
+                backgroundColor: 'DodgerBlue',
+                borderColor: 'rgb(124, 109, 155)',
+            }, 
+            {
+                data: lsLux,
+                label: 'Lux',
+                backgroundColor: 'orange',
+                // This binds the dataset to the right y axis
+                yAxisID: 'left-y-axis',
+            }, 
+            {
+                data: lsColor,
+                label: 'Color Temperature',
+                backgroundColor: 'tomato',
+                // This binds the dataset to the right y axis
+                yAxisID: 'right-y-axis',
+            }],
+            labels: lsTime
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    id: 'left-y-axis',
+                    type: 'linear',
+                    position: 'left',
+                },
+            {
+                id: 'right-y-axis',
+                    type: 'linear', 
+                    position: 'right',
+            }],
+                xAxes: [{
+                    // time: {
+                    //     unit: 'second'
+                    // }
+            }]
+            }
+        }
+    });
+    document.getElementById('update').addEventListener('click', function() {
+			var type = document.getElementById('type').value;
+			// myChart.config.data.datasets[0].type = type;
+			myChart.config.type = type;
+			myChart.update();
+		});
+  });
+
+  </script>
+{% endblock scripts %}
